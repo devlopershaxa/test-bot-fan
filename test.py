@@ -249,39 +249,45 @@ user_results = {}
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    chat_id = message.chat.id
-    
-    # Foydalanuvchi ma'lumotlarini boshlang'ich qiymatlarga o'rnatish
-    user_states[chat_id] = {
-        'subject': None,
-        'current_question': 0,
-        'score': 0,
-        'answers': []
-    }
-    
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    btn1 = types.KeyboardButton("Matematika")
-    btn2 = types.KeyboardButton("Ona tili")
-    btn3 = types.KeyboardButton("Ingliz tili")
-    markup.add(btn1, btn2, btn3)
-    
-    bot.send_message(chat_id, "Salom! 5-sinf fanlari bo'yicha test botiga xush kelibsiz!\nQaysi fandan test o'tmoqchisiz?", reply_markup=markup)
+    try:
+        chat_id = message.chat.id
+        
+        # Foydalanuvchi ma'lumotlarini boshlang'ich qiymatlarga o'rnatish
+        user_states[chat_id] = {
+            'subject': None,
+            'current_question': 0,
+            'score': 0,
+            'answers': []
+        }
+        
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+        btn1 = types.KeyboardButton("Matematika")
+        btn2 = types.KeyboardButton("Ona tili")
+        btn3 = types.KeyboardButton("Ingliz tili")
+        markup.add(btn1, btn2, btn3)
+        
+        bot.send_message(chat_id, "Salom! 5-sinf fanlari bo'yicha test botiga xush kelibsiz!\nQaysi fandan test o'tmoqchisiz?", reply_markup=markup)
+    except Exception as e:
+        print(f"Xatolik yuz berdi: {e}")
 
 @bot.message_handler(func=lambda message: message.text in ["Matematika", "Ona tili", "Ingliz tili"])
 def select_subject(message):
-    chat_id = message.chat.id
-    subject_map = {
-        "Matematika": "matematika",
-        "Ona tili": "ona_tili",
-        "Ingliz tili": "ingliz_tili"
-    }
-    
-    user_states[chat_id]['subject'] = subject_map[message.text]
-    user_states[chat_id]['current_question'] = 0
-    user_states[chat_id]['score'] = 0
-    user_states[chat_id]['answers'] = []
-    
-    send_question(chat_id)
+    try:
+        chat_id = message.chat.id
+        subject_map = {
+            "Matematika": "matematika",
+            "Ona tili": "ona_tili",
+            "Ingliz tili": "ingliz_tili"
+        }
+        
+        user_states[chat_id]['subject'] = subject_map[message.text]
+        user_states[chat_id]['current_question'] = 0
+        user_states[chat_id]['score'] = 0
+        user_states[chat_id]['answers'] = []
+        
+        send_question(chat_id)
+    except Exception as e:
+        print(f"Xatolik yuz berdi: {e}")
 
 def send_question(chat_id):
     user_state = user_states.get(chat_id)
@@ -306,39 +312,43 @@ def send_question(chat_id):
 
 @bot.message_handler(func=lambda message: message.text.startswith(tuple([f"{chr(65+i)})" for i in range(4)])))
 def handle_answer(message):
-    chat_id = message.chat.id
-    user_state = user_states.get(chat_id)
-    
-    if not user_state or user_state['subject'] is None:
-        bot.send_message(chat_id, "Iltimos, avval fanni tanlang /start tugmasini bosing")
-        return
-    
-    subject = user_state['subject']
-    question_index = user_state['current_question']
-    
-    # Javobni aniqlash
-    answer_letter = message.text[0]  # A, B, C yoki D
-    answer_index = ord(answer_letter) - 65  # A=0, B=1, C=2, D=3
-    
-    # To'g'ri javobni tekshirish
-    correct_index = questions[subject][question_index]['correct']
-    is_correct = answer_index == correct_index
-    
-    # Natijalarni saqlash
-    user_state['answers'].append({
-        'question': question_index,
-        'answer': answer_index,
-        'correct': is_correct
-    })
-    
-    if is_correct:
-        user_state['score'] += 1
-    
-    # Keyingi savolga o'tish
-    user_state['current_question'] += 1
-    
-    # Keyingi savolni yuborish
-    send_question(chat_id)
+    try:
+        chat_id = message.chat.id
+        user_state = user_states.get(chat_id)
+        
+        if not user_state or user_state['subject'] is None:
+            bot.send_message(chat_id, "Iltimos, avval fanni tanlang /start tugmasini bosing")
+            return
+        
+        subject = user_state['subject']
+        question_index = user_state['current_question']
+        
+        # Javobni aniqlash
+        answer_letter = message.text[0]  # A, B, C yoki D
+        answer_index = ord(answer_letter) - 65  # A=0, B=1, C=2, D=3
+        
+        # To'g'ri javobni tekshirish
+        correct_index = questions[subject][question_index]['correct']
+        is_correct = answer_index == correct_index
+        
+        # Natijalarni saqlash
+        user_state['answers'].append({
+            'question': question_index,
+            'answer': answer_index,
+            'correct': is_correct
+        })
+        
+        if is_correct:
+            user_state['score'] += 1
+        
+        # Keyingi savolga o'tish
+        user_state['current_question'] += 1
+        
+        # Keyingi savolni yuborish
+        send_question(chat_id)
+    except Exception as e:
+        print(f"Xatolik yuz berdi: {e}")
+        bot.send_message(chat_id, "Xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.")
 
 def show_results(chat_id):
     user_state = user_states.get(chat_id)
